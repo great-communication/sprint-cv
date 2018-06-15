@@ -1,0 +1,200 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Test";
+
+    // Initialize general page variables    
+    CurrentUser user = new CurrentUser();
+    Certificate certificate = new Certificate(user);
+
+    string[] questions = { "Bacteria", "Viruses", "Cancer cells", "Mice", "Alcohol", "Dangerous chemicals", "Nobel Prizes", "Machines with cool flashing LED lights", "Bureaucracy", "Rules and regulations" };
+    string[] scoresStrings = { "0", "0", "0", "0", "0", "0", "0", "0", "0", "0" };
+    var totalScore = 0;
+    string[] grades =
+        { "Oh, you are probably a bachelor student. How cute! You should finish your studies before you try to get certified.",
+
+        "Seems like you have not finished your master studies yet. You should finish your degree. We can not certify you at this moment.",
+
+        "You are probably a PhD student. You know the basics. We certify you as a molecular biologist.",
+
+        "You are probaly a postdoc. You know a lot, but not everything. We gladly certify you as a molecular biologist.",
+
+        "You must be a professor! No one else would have such strong positive feelings to such disgusting things. We can without doubt certify you as a molecular biologist, in fact, we are honored to do so."
+    };
+    var grade = 0;
+    var minGradeForPass = 2;
+
+    // If this is a POST request, validate and process data
+    if (IsPost)
+    {
+        var action = Request["action"];
+        if (action == "display")
+        {
+            var maxScore = 100;            
+            List<int> scores = new List<int>(); ;
+
+            //Calculate total score
+            for (var i = 0; i < questions.Length; i++)
+            {
+                var score = Request["RadioButtonGroup" + i].AsInt();
+
+                scores.Add(score);
+                scoresStrings[i] = score.ToString();                
+
+                totalScore += score;
+            }
+
+            if (totalScore > maxScore)
+            {
+                totalScore = maxScore;
+            }
+
+            //Convert total score to grade
+            grade = (int)((totalScore / (double)maxScore) * grades.Length);
+
+            //Clamp grade to valid array index range
+            if (grade >= grades.Length)
+            {
+                grade = grades.Length - 1;
+            }
+
+
+            if(grade >= minGradeForPass) {
+                string type = "MolBioCertificate";
+                certificate.CreateNew(type,scores);
+            }
+        }
+        else if (action == "save")
+        {
+            var certificateId = Request["certificate-id"];
+            var firstName = Request["first-name"];
+            var lastName = Request["last-name"];
+            var complete = true;
+
+            certificate.Update(certificateId, firstName, lastName, complete);
+            Response.Redirect("~/Members/Certificates.cshtml");
+        }
+
+    }
+}
+
+<div>
+    @if (!@IsPost)
+    {
+        <h2>Molecular Biologist Test</h2>
+        <p>Please rate how you feel about the following things:</p><br />
+        <form action="" method="post">
+            <table class="table test-table fixed">
+                <thead>
+                    <tr>
+                        <th class="table_h1"><label>Item</label></th>
+                        <th class="table_h1"><label>Feeling</label></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                    </tr>
+                    <tr>
+                        <th class="table_h2"></th>
+                        <th class="table_h2"><label>None</label></th>
+                        <th class="table_h2"><label>Poor</label></th>
+                        <th class="table_h2"><label>Fair</label></th>
+                        <th class="table_h2"><label>Good</label></th>
+                        <th class="table_h2"><label>Very Good</label></th>
+                        <th class="table_h2"><label>Excellent</label></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @*Create all table rows*@
+                    @for (var i = 0; i < questions.Length; i++)
+                    {
+                        <tr>
+                            <td>@questions.GetValue(i)</td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="0" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="2" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="4" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="6" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="8" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="10" type="radio" /></label></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <input class="btn" id="Button1" type="submit" value="Submit" />
+            <input id="action" type="hidden" name="action" value="display" />
+        </form>
+        <br />
+        <br />
+    }
+    else
+    {
+        <h2>Molecular Biologist Test</h2>
+        <h2>Results</h2>
+        if (grade >= minGradeForPass)
+        {
+            <h2>You passed!</h2>
+        }
+        //Create chart
+        string theme = "<Chart>" +
+              "<ChartAreas>" +
+              "<ChartArea Name=\"Default\" _Template_=\"All\">" +
+              "<AxisX Interval=\"1\">" +
+              "<MajorGrid Enabled =\"False\" />" +
+              "</AxisX>" +
+              "<AxisY Title=\"Score\" Minimum=\"0\" Maximum=\"10\" Interval=\"2\">" +
+              "<MajorGrid Enabled =\"False\" />" +
+              "</AxisY>" +
+              "</ChartArea>" +
+              "</ChartAreas>" +
+              "<Legends>" +
+              "<Legend _Template_=\"All\" Alignment=\"Center\" BackColor=\"Transparent\" Docking=\"Bottom\" " +
+              "Font=\"Trebuchet MS, 8.25pt, style=Bold\" IsTextAutoFit =\"False\" " +
+              "LegendStyle=\"Row\">" +
+              "</Legend>" +
+              "</Legends>" +
+              "</Chart>";
+
+        string[] xLabels = questions;
+        Array.Reverse(xLabels);
+
+        string[] yValues = scoresStrings;
+        Array.Reverse(yValues);
+
+        var myChart = new Chart(width: 600, height: 400, theme: theme)
+        .AddTitle("Molecular Biologist Test")
+        .AddSeries(chartType: "bar",
+            xValue: xLabels,
+            yValues: yValues);
+        WebImage image = myChart.ToWebImage();
+
+        <img src="data: image/jpeg;base64,@Convert.ToBase64String(image.GetBytes("jpeg"))" alt="" />
+
+        <h3>Total score: @totalScore</h3>
+        <p class="testResultText biggertextsize">@grades[grade]</p>
+
+        if (grade >= minGradeForPass)
+        {
+            <div class="biggertextsize">
+                <form id="save-form" form action="" method="post">
+                    <div>Please enter your name to complete your certificate:</div>
+                    <table>
+                        <tbody>
+                            <tr><td><label for="first-name">First name:</label></td><td><input id="first-name" name="first-name" type="text" value="" maxlength="100" /></td></tr>
+                            <tr><td><label for="last-name">Last name:</label></td><td><input id="last-name" name="last-name" type="text" value="" maxlength="100" /></td></tr>
+                        </tbody>
+                    </table>
+                    <div><input class="btn save-block" id="save-button-2" type="submit" value="Complete" /></div>
+                    <input id="action" type="hidden" name="action" value="save" />
+                    <input id="certificate-id" type="hidden" name="certificate-id" value="@certificate.Id" />
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="biggertextsize">
+                <a href="/Members/Certificates.cshtml">Back to certificates</a>
+            </div>
+        }
+    }
+</div>

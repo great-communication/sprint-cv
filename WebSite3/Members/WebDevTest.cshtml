@@ -1,0 +1,217 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Test";
+
+    // Initialize general page variables    
+    CurrentUser user = new CurrentUser();
+    Certificate certificate = new Certificate(user);
+
+    string[] questions = { "Node", "Angular", "Meteor", "jQuery", "React", "Ember", "Ajax", "Backbone", "jScrewIt", "Vue 2.0" };
+    string[] scoresStrings = { "0", "0", "0", "0", "0", "0", "0", "0", "0", "0" };
+    var totalScore = 0;
+    string[] grades =
+        { "You are like a baby kitten trying to open its eyes for the very first time. " +
+        "Very cute, but absolutley not ready to be a web developer. We can not certify you at this time.",
+
+        "Well, you do know some things. But so does a truffle pig in a German forest. That does not mean it is " +
+        "fit to be a web developer. We are sorry, but we can not certify you at this moment. You should strive to learn more.",
+
+        "You know the basics, but should probably expand your tool set to be more versatile. " +
+        "Right now you are the koala of the WebDev world. But that is okay, you can still be useful to an employer. " +
+        "We certify you as a web developer.",
+
+        "You are very knowledgeable, even if there are certain tools you do not master. " +
+        "But since you have learnt a lot so far, we are certain you will soak up new knowledge " +
+        "like a high-spirited sea sponge when needed. We gladly certify you as a web developer.",
+
+        "You are a true hero to the WebDev world! Without you, the web would lie in darkness. " +
+        "The employers will fight like rabid dogs over scrap meat to get their claws in you. " +
+        "We can without doubt certify you as a web developer, in fact, we are honored to do so."
+    };
+    var grade = 0;
+    var minGradeForPass = 2;
+
+    // If this is a POST request, validate and process data
+    if (IsPost)
+    {
+        var action = Request["action"];
+        if (action == "display")
+        {
+            var maxScore = 100;
+            var bonusMultiplier = 10;
+            var JScrewIt = 8;
+            List<int> scores = new List<int>(); ;
+
+            //Calculate total score
+            for (var i = 0; i < questions.Length; i++)
+            {
+                var score = Request["RadioButtonGroup" + i].AsInt();
+
+                scores.Add(score);
+                scoresStrings[i] = score.ToString();
+
+                if (i == JScrewIt)
+                {
+                    score *= bonusMultiplier;
+                }
+
+                totalScore += score;
+            }
+
+            if (totalScore > maxScore)
+            {
+                totalScore = maxScore;
+            }
+
+            //Convert total score to grade
+            grade = (int)((totalScore / (double)maxScore) * grades.Length);
+
+            //Clamp grade to valid array index range
+            if (grade >= grades.Length)
+            {
+                grade = grades.Length - 1;
+            }
+
+
+            if(grade >= minGradeForPass) {
+                string type = "WebDevCertificate";
+                certificate.CreateNew(type,scores);
+            }
+        }
+        else if (action == "save")
+        {
+            var certificateId = Request["certificate-id"];
+            var firstName = Request["first-name"];
+            var lastName = Request["last-name"];
+            var complete = true;
+            
+            certificate.Update(certificateId, firstName, lastName, complete);
+            Response.Redirect("~/Members/Certificates.cshtml");
+        }
+
+    }
+}
+
+<div>
+    @if (!@IsPost)
+    {
+        <h2>Web Developer Test</h2>
+        <p>Please rate your knowledge with the following libraries:</p><br />
+        <form action="" method="post">
+            <table class="table test-table fixed">
+                <thead>
+                    <tr>
+                        <th class="table_h1"><label>Library</label></th>
+                        <th class="table_h1"><label>Knowledge</label></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                        <th class="table_h1"></th>
+                    </tr>
+                    <tr>
+                        <th class="table_h2"></th>
+                        <th class="table_h2"><label>None</label></th>
+                        <th class="table_h2"><label>Poor</label></th>
+                        <th class="table_h2"><label>Fair</label></th>
+                        <th class="table_h2"><label>Good</label></th>
+                        <th class="table_h2"><label>Very Good</label></th>
+                        <th class="table_h2"><label>Excellent</label></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @*Create all table rows*@
+                    @for (var i = 0; i < questions.Length; i++)
+                    {
+                        <tr>
+                            <td>@questions.GetValue(i)</td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="0" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="2" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="4" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="6" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="8" type="radio" /></label></td>
+                            <td><label><input name='@("RadioButtonGroup"+i)' value="10" type="radio" /></label></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <input class="btn" id="Button1" type="submit" value="Submit" /> 
+            <input id="action" type="hidden" name="action" value="display" />
+        </form>
+        <br />
+        <br />
+
+
+
+    }
+    else
+    {
+        <h2>Web Developer Test</h2>
+        <h2>Results</h2>
+        if (grade >= minGradeForPass)
+        {        
+            <h2>You passed!</h2>
+        }
+        //Create chart
+        string theme = "<Chart>" +
+           "<ChartAreas>" +
+           "<ChartArea Name=\"Default\" _Template_=\"All\">" +
+           "<AxisX Interval=\"1\">" +
+           "<MajorGrid Enabled =\"False\" />" +
+           "</AxisX>" +
+           "<AxisY Title=\"Score\" Minimum=\"0\" Maximum=\"10\" Interval=\"2\">" +
+           "<MajorGrid Enabled =\"False\" />" +
+           "</AxisY>" +
+           "</ChartArea>" +
+           "</ChartAreas>" +
+           "<Legends>" +
+           "<Legend _Template_=\"All\" Alignment=\"Center\" BackColor=\"Transparent\" Docking=\"Bottom\" " +
+           "Font=\"Trebuchet MS, 8.25pt, style=Bold\" IsTextAutoFit =\"False\" " +
+           "LegendStyle=\"Row\">" +
+           "</Legend>" +
+           "</Legends>" +
+           "</Chart>";
+
+        string[] xLabels = questions;
+        Array.Reverse(xLabels);
+
+        string[] yValues = scoresStrings;
+        Array.Reverse(yValues);
+
+        var myChart = new Chart(width: 600, height: 400, theme: theme)
+        .AddTitle("Web Developer Tools")
+        .AddSeries(chartType: "bar",
+            xValue: xLabels,
+            yValues: yValues);
+        WebImage image = myChart.ToWebImage();
+
+        <img src="data: image/jpeg;base64,@Convert.ToBase64String(image.GetBytes("jpeg"))" alt="" />
+
+        <h3>Total score: @totalScore</h3>
+        <p class="testResultText biggertextsize">@grades[grade]</p>
+
+        if(grade >= minGradeForPass)
+        {
+        <div class="biggertextsize">
+            <form id="save-form" form action="" method="post">  
+                <div>Please enter your name to complete your certificate:</div>
+                    <table>
+                        <tbody>
+                            <tr><td><label for="first-name">First name:</label></td><td><input id="first-name" name="first-name" type="text" value="" maxlength="100" /></td></tr>
+                            <tr><td><label for="last-name">Last name:</label></td><td><input id="last-name" name="last-name" type="text" value="" maxlength="100" /></td></tr>
+                        </tbody>
+                    </table>
+                    <div><input class="btn save-block" id="save-button-2" type="submit" value="Complete" /></div>
+                    <input id="action" type="hidden" name="action" value="save" />
+                    <input id="certificate-id" type="hidden" name="certificate-id" value="@certificate.Id" />
+            </form>
+        </div>
+        }
+        else
+        {
+            <div class="biggertextsize">
+                <a href="/Members/Certificates.cshtml">Back to certificates</a>
+            </div>
+        }        
+    }
+</div>

@@ -1,0 +1,49 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "sprintCV";
+    var getStartedLink = "";    
+    if (WebSecurity.IsAuthenticated){
+        getStartedLink = "~/Members/CVs.cshtml";
+    }
+    else{
+        getStartedLink = "~/Account/Register.cshtml";
+    }
+}
+
+<div class="container">
+    <img class="logo_big" src="~/Images/logo_big.png" />
+    <img class="scale_down img-rounded" src="~/Images/success.jpg" />
+</div>
+
+<br />
+<div class="test2">    
+    <ul>
+        <li>
+            Create a professional CV in minutes
+        </li>
+        <li>
+            Validate your knowledge and get certified    
+        </li>
+    </ul>
+</div>
+<hr /><br />
+<div class="test3">
+    <h3>What we offer</h3>
+    <p>
+        With 20 years of experience in the recruitment business we know what it takes to stand out.
+        Now we offer you our knowledge for free. We can help you create a professional CV
+        that clearly presents your credentials and highlights your personal strengths. And furthermore,
+        we offer quick tests that evaluate your hireability in a number of industries. If you pass our
+        standards we award you with an official certificate. It's all done online in a matter of minutes.
+        <br /><br />
+        When finished you can download your sprintCV. It will also be searchable for us at sprintRecruitment and we will
+        have it easier matching you with our clients. With a sprintCV you have a head start on securing that dream job of yours!
+        <br /><br />
+        <a href=@Href(getStartedLink)>Get started!</a>
+        
+    </p>
+    
+    
+
+
+</div>
